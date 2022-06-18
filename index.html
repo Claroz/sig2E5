@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visor Mundo</title>
+    <script src=" https://unpkg.com/leaflet@1.6.0/dist/leaflet.js "></script>
+    <link rel="stylesheet" href=" https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" />
+    <script src=" https://unpkg.com/leaflet@1.6.0/dist/leaflet.js "></script>
+    <link rel="stylesheet" href="./dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="./dist/MarkerCluster.Default.css" />
+    <script src="./dist/leaflet.markercluster.js"></script>
+    <link rel="stylesheet" href="./dist/styledLayerControl.css" />
+    <script src="./dist/styledLayerControl.js"></script>
+    <script src="https://code.jquery.com/jquery-3.2.1.js"></script>
+    <script src="./dist/Control.MiniMap.min.js" type="text/javascript"></script>
+    <script type="text/javascript" src="paises.js"></script>
+    <script type="text/javascript" src="ciudades.js"></script>
+    <script type="text/javascript" src="hidrografia.js"></script>
+    <script type="text/javascript" src="departamento.js"></script>
+
+    <style>
+        #map {
+
+            width: 100%;
+            height: 580px;
+            box-shadow: 5px 5px 5px #888;
+        }
+
+        .info {
+
+            padding: 6px 6px;
+            font: 14px/16px Arial, Helvetica, sans-serif;
+            background: white;
+            background: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            border-radius: 5px;
+            text-align: center;
+
+        }
+
+        .div {
+            position: relative;
+        }
+
+        .info {
+            left: -320%;
+            position: absolute;
+            top: 20%;
+            transform: translate(-50%, -50%);
+
+        }
+
+        /*.info{
+            position: absolute;
+            top: -5%;
+            transform: translateX(-600px);
+        }*/
+
+        .info h2 {
+            margin: 0 0 5px;
+            color: #777;
+        }
+    </style>
+
+</head>
+
+<body>
+    <div id="map"> </div>
+    <script>
+        
+        var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a>'
+                + 'contributors', maxZoom: 18
+        });
+
+        var osm2 = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a>'
+                + 'contributors', maxZoom: 18
+        });
+
+        var map = L.map("map", {
+            center: [41.66, -4.72],
+            layers: [osm],
+            zoom: 5,
+            scrollWheelZoom: true,
+        });
+
+        var miniMap = new L.Control.MiniMap(osm2).addTo(map);
+
+        var countryStyle = {
+            'color': "#e12a2a",
+            'weight': 2,
+            'opacity': 0.6
+        };
+
+        var markers = L.markerClusterGroup();
+
+        var iconCiudadS = L.icon({
+            iconUrl: ' https://cdn.icon-icons.com/icons2/1709/PNG/512/flag_112362.png',
+            iconSize: [20, 20],
+            popupAnchor: [-1, -10]
+        });
+
+        var iconCiudadN = L.icon({
+            iconUrl: ' https://cdn.icon-icons.com/icons2/1473/PNG/512/095flag_101556.png',
+            iconSize: [30, 30],
+            popupAnchor: [-1, -10]
+        });
+
+        function getColor(d) {
+            return d > 100000000000 ? '#800026' :
+                d > 50000000000 ? '#BD0026' :
+                    d > 2000000000 ? '#E31A1C' :
+                        d > 100000000 ? '#FC4E2A' :
+                            d > 50000000 ? '#FD8D3C' :
+                                d > 2000000 ? '#FEB24C' :
+                                    d > 100000 ? '#FED976' :
+                                        '#FFEDA0';
+        };
+
+        function getColor2(d) {
+            return d > 100000000000 ? '#003400' :
+                d > 50000000000 ? '#006414' :
+                    d > 2000000000 ? '#009929' :
+                        d > 100000000 ? '#5ccb5f' :
+                            d > 50000000 ? '#98ff96' :
+                                '#a9e159';
+        };
+
+        function style1(feature) {
+            return {
+                fillColor: getColor(feature.properties.pop_est),
+                weight: 2,
+                opacity: 1,
+                color: 'white',
+                dashArray: '3',
+                fillOpacity: 0.7
+            };
+        }
+
+        function style2(feature) {
+            return {
+                fillColor: getColor2(feature.properties.SHAPE_AREA),
+                weight: 2,
+                opacity: 1,
+                color: 'white',
+                dashArray: '3',
+                fillOpacity: 0.7
+            };
+        }
+
+        function popup(feature, layer) {
+            if (feature.properties && feature.properties.name) {
+                layer.bindPopup(feature.properties.name);
+            }
+        }
+
+        function popupDepar(feature, layer) {
+            if (feature.properties && feature.properties.COD_DANE) {
+                layer.bindPopup(feature.properties.COD_DANE);
+            }
+        }
+
+        function popupCiudad(feature, latlng) {
+            return feature.properties.capital == 'S' ? markers.addLayer(L.marker(latlng, {
+                icon: iconCiudadS,
+                draggable: false,
+                title: 'Capital'
+            })).bindPopup(feature.properties.ciudad) :
+                markers.addLayer(L.marker(latlng, {
+                    icon: iconCiudadN,
+                    draggable: false,
+                    title: 'No capital'
+                })).bindPopup(feature.properties.ciudad);
+        };
+
+        var c1 = L.geoJson(countries, {
+            style: style1,
+            onEachFeature: popup
+        }).addTo(map);
+
+        L.geoJson(hidro, {
+        }).addTo(map);
+
+        var d1 = L.geoJson(depa, {
+            style: style2,
+            onEachFeature: popupDepar
+        }).addTo(map);
+
+        var c2 = L.geoJson(ciud, {
+            pointToLayer: popupCiudad
+        }).addTo(map);
+        map.addLayer(markers);
+
+        var baseMaps = {
+            "<img src='https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Openstreetmap_logo.svg/1200px-Openstreetmap_logo.svg.png' height=15px, width=15px /> OSM": osm
+        };
+        var overlayMaps = {
+            "<img src='https://cdn-icons-png.flaticon.com/512/2947/2947656.png' height=15px, width=15px /> Paises": c1,
+            "<img src='https://cdn-icons-png.flaticon.com/512/993/993854.png' height=15px, width=15px /> Departamentos": d1,
+            "<img src='https://cdn-icons-png.flaticon.com/512/2942/2942593.png' height=15px, width=15px /> Ciudades": c2
+        };
+
+        L.control.layers(baseMaps, overlayMaps, {collapsed: false}).addTo(map);
+
+        L.control.scale({
+            position: 'bottomleft',
+            imperial: false
+        }).addTo(map);
+
+        var baseMaps = {
+            "OpenStreetMap": osm
+        };
+
+        var title = L.control();
+        title.onAdd = function (map) {
+            var div = L.DomUtil.create('div', 'info');
+            div.innerHTML += '<h2>EJERCICIO 5</h2>Juan Claros'; return div;
+        };
+        title.addTo(map);
+
+    </script>
+
+</body>
+
+</html>
